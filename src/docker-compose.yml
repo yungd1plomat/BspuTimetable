@@ -1,0 +1,91 @@
+version: '3.4'
+
+services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - caddy
+      - localnetwork
+    volumes:
+      - ./Caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: always
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    networks:
+      - localnetwork
+    volumes:
+      - mysqldb:/var/lib/mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_DATABASE: timetable
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbuserpassword
+      MYSQL_TCP_PORT: 3308
+    restart: always
+
+  parser:
+    image: yungd1plomat/parser
+    container_name: parser
+    networks:
+      - localnetwork
+    environment:
+      - CONNECTION_STRING=Server=mysql;Port=3308;Database=timetable;Uid=dbuser;Pwd=dbuserpassword;
+      - ASPNETCORE_URLS=http://+:5000;
+    build:
+      context: .
+      dockerfile: Parser/Dockerfile
+    depends_on:
+     - mysql
+     - caddy 
+    restart: always
+
+  tgbot:
+    image: yungd1plomat/tgbot
+    container_name: tgbot
+    networks:
+      - localnetwork
+    environment:
+      - CONNECTION_STRING=Server=mysql;Port=3308;Database=timetable;Uid=dbuser;Pwd=dbuserpassword;
+      - ASPNETCORE_URLS=http://+:5001;
+    build:
+      context: .
+      dockerfile: TgBot/Dockerfile
+    depends_on:
+     - mysql
+     - caddy 
+    restart: always
+
+  vkbot:
+    image: yungd1plomat/vkbot
+    container_name: vkbot
+    networks:
+      - localnetwork
+    environment:
+      - CONNECTION_STRING=Server=mysql;Port=3308;Database=timetable;Uid=dbuser;Pwd=dbuserpassword;
+      - ASPNETCORE_URLS=http://+:5002;
+    build:
+      context: .
+      dockerfile: VkBot/Dockerfile
+    depends_on:
+     - mysql
+     - caddy 
+    restart: always
+
+networks:
+  caddy:
+    external: true
+  localnetwork:
+    external: false
+    
+volumes:
+  mysqldb:
+  caddy_data:
+  caddy_config:
