@@ -39,6 +39,7 @@ services:
     environment:
       - CONNECTION_STRING=Server=mysql;Port=3308;Database=timetable;Uid=dbuser;Pwd=dbuserpassword;
       - ASPNETCORE_URLS=http://+:5000;
+      - TZ=Asia/Yekaterinburg
     build:
       context: .
       dockerfile: Parser/Dockerfile
@@ -55,6 +56,7 @@ services:
     environment:
       - CONNECTION_STRING=Server=mysql;Port=3308;Database=timetable;Uid=dbuser;Pwd=dbuserpassword;
       - ASPNETCORE_URLS=http://+:5001;
+      - TZ=Asia/Yekaterinburg
     build:
       context: .
       dockerfile: TgBot/Dockerfile
@@ -71,6 +73,7 @@ services:
     environment:
       - CONNECTION_STRING=Server=mysql;Port=3308;Database=timetable;Uid=dbuser;Pwd=dbuserpassword;
       - ASPNETCORE_URLS=http://+:5002;
+      - TZ=Asia/Yekaterinburg
     build:
       context: .
       dockerfile: VkBot/Dockerfile
