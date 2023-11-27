@@ -20,6 +20,11 @@ namespace Parser.Abstractions
         Task UpdateGroupsAsync(CancellationToken cancellationToken);
 
         /// <summary>
+        /// Обновляет список преподавателей
+        /// </summary>
+        Task UpdateProfessorsAsync(CancellationToken cancellationToken);
+
+        /// <summary>
         /// Получает полный список групп
         /// </summary>
         /// <returns>Список групп</returns>

@@ -9,6 +9,8 @@ namespace Parser.Data
 
         public DbSet<Group> Groups { get; set; }
 
+        public DbSet<Professor> Professors { get; set; }
+
         public ScheduleDbContext(DbContextOptions<ScheduleDbContext> options)
             : base(options)
         {

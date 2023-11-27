@@ -17,6 +17,13 @@ namespace Parser.Services
             _httpClient = new HttpClient();
         }
 
+        public async Task<IEnumerable<Professor>> GetProfessorsAsync(CancellationToken cancellationToken)
+        {
+            var url = $"{BaseUrl}/api/raspTeacherlist";
+            var professorsResponse = await _httpClient.GetFromJsonAsync<Response<IEnumerable<Professor>>>(url, cancellationToken);
+            return professorsResponse.Data;
+        }
+
         public async Task<IEnumerable<Group>> GetGroupsAsync(CancellationToken cancellationToken)
         {
             var url = $"{BaseUrl}/api/raspGrouplist";

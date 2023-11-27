@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace Parser.Models
 {
+    /// <summary>
+    /// Класс предоставляющий информацию о группе
+    /// </summary>
     [Table("Groups")]
     public class Group
     {

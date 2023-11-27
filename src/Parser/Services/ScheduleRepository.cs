@@ -2,7 +2,7 @@
 using Parser.Abstractions;
 using Parser.Data;
 using Parser.Models;
-using System.Reflection;
+using Regex = System.Text.RegularExpressions.Regex;
 
 namespace Parser.Services
 {
@@ -52,6 +52,21 @@ namespace Parser.Services
                 scheduleData.Info.LastUpdate == group.LastUpdate)
                 return;
 
+            // Не все занятия помечены кодом преподавателя (ошибка апи)
+            // Занятия проводимые на osdo или онлайн помечены как
+            // Фамилия И.О+ и имеют код преподавателя 0
+            var emptyLessons = scheduleData.Lessons.Where(l => l.ProfessorId == 0);
+            foreach (var lesson in emptyLessons)
+            {
+                // Поэтому ищем преподавателя по маске инициалов (Фамилия И.О.)
+                var professor = await _dbContext.Professors.FirstOrDefaultAsync(p => lesson.ProfessorShortName.StartsWith(p.ShortName), cancellationToken);
+                // Апишку писал Масленников, поэтому она может отдавать несуществующих преподавателей
+                // которых нет на сайте (наставников/плюсовиков каких то/совместителей мб)
+                // Они не смогут смотреть расписание ¯\_(ツ)_/¯
+                if (professor is null)
+                    lesson.ProfessorId = null;
+                lesson.Professor = professor;
+            }
             var oldLessons = await _dbContext.Lessons.Where(l => l.Group == group).ToListAsync(cancellationToken);
             if (oldLessons.Any())
                 _dbContext.Lessons.RemoveRange(oldLessons);
@@ -61,13 +76,37 @@ namespace Parser.Services
             }
             await _dbContext.Lessons.AddRangeAsync(scheduleData.Lessons, cancellationToken);
             group.LastUpdate = scheduleData.Info.LastUpdate;
+        }
+
+        public async Task UpdateProfessorsAsync(CancellationToken cancellationToken)
+        {
+            var currentProfessors = await _dbContext.Professors.ToListAsync(cancellationToken);
+            var updatedProfessors = await _bspuApi.GetProfessorsAsync(cancellationToken);
+            foreach (var professor in updatedProfessors)
+            {
+                // Разработчики api не предусмотрели отдавать инициалы преподавателей, поэтому
+                // парсим в формат Фамилия Имя Отчество -> Фамилия И.О
+                var initials = professor.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var shortName = $"{initials[0]} {initials[1][0]}.{initials[2][0]}.";
+                professor.ShortName = shortName;
+            }
+            var newProfessors = updatedProfessors.ExceptBy(currentProfessors.Select(p => p.Id), p => p.Id);
+            var deletedProfessors = currentProfessors.ExceptBy(updatedProfessors.Select(p => p.Id), p => p.Id);
+            
+            await _dbContext.AddRangeAsync(newProfessors, cancellationToken);
+
+            if (deletedProfessors.Any())
+                _dbContext.RemoveRange(deletedProfessors, cancellationToken);
+
             await _dbContext.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation($"Updated schedule for {group.Name}");
+            _logger.LogInformation($"Parsed {newProfessors.Count()} new professors and deleted {deletedProfessors.Count()} professors");
+
         }
 
         public async Task UpdateScheduleAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Schedule update started..");
+            await UpdateProfessorsAsync(cancellationToken);
             await UpdateGroupsAsync(cancellationToken);
             var groups = await GetGroupsAsync(cancellationToken);
             foreach (var group in groups)

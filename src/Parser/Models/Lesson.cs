@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace Parser.Models
 {
+    /// <summary>
+    /// Класс предоставляющий информацию о занятии
+    /// </summary>
     [Table("Lessons")]
     public class Lesson
     {
@@ -29,10 +32,22 @@ namespace Parser.Models
         public DateTime EndTime { get; set; }
 
         /// <summary>
-        /// Преподаватель
+        /// Короткое имя преподавателя, которое может не быть помечено кодом
         /// </summary>
         [JsonPropertyName("преподаватель")]
-        public string Professor { get; set; }
+        public string ProfessorShortName { get; set; }
+
+        /// <summary>
+        /// Id преподавателя из asu.bspu.ru
+        /// </summary>
+        [JsonPropertyName("кодПреподавателя")]
+        public long? ProfessorId { get; set; }
+
+        /// <summary>
+        /// Преподаватель из asu.bspu.ru
+        /// </summary>
+        [JsonIgnore]
+        public virtual Professor? Professor { get; set; }
 
         /// <summary>
         /// Дисциплина
