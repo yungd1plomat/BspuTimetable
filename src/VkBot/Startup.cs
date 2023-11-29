@@ -1,5 +1,8 @@
-﻿using VkBot.Abstractions;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using VkBot.Abstractions;
 using VkBot.Commands;
+using VkBot.Data;
 using VkBot.Services;
 using VkNet;
 using VkNet.Abstractions;
@@ -29,6 +32,7 @@ namespace VkBot
                 });
                 return api;
             });
+            services.AddDbContext<VkDbContext>(options => options.UseNpgsql(connectionString, opts => opts.EnableRetryOnFailure(10)));
             services.AddControllers().AddNewtonsoftJson();
         }
 
